@@ -56,15 +56,15 @@ std::vector<double> getLineOfFile(std::ifstream &myFile, size_t lineNum, size_t 
 
 int main() {
 
-    const char *fname = "1Kx50.txt";
+    const char *fname = "1Mx50.txt";
     const char delimiter = ' ';
-    size_t iterations = 100;
+    size_t iterations = 5;
     double asrHandicap = 1;
     double afrHandicap = 1;
     bool verbose = true;
     std::cout << std::scientific;
     Timer timer = Timer();
-    const char *testType = "RUN";
+    const char *testType = "SETUP";
 
     ///////////////////////////////////////////
 
@@ -76,6 +76,7 @@ int main() {
         srand(181);
         timer.start();
         for(size_t i = 0; i < iterations; i++) {
+            if (verbose) std::cout << "iteration :" << i + 1 << std::endl;
             std::ifstream myFile;
             myFile.open(fname);
             std::string line;
@@ -92,6 +93,7 @@ int main() {
         timer.start();
 
         for(size_t i = 0; i < iterations; i++) {
+            if (verbose) std::cout << "iteration :" << i + 1 << std::endl;
             ArrayFileReader<double> arrayFileReader = ArrayFileReader<double>(fname, delimiter);
         }
         double readerSetup = timer.stop();
@@ -99,6 +101,7 @@ int main() {
         std::cout << "Binary File Parser:" << std::endl;
         timer.start();
         for(size_t i = 0; i < iterations; i++) {
+            if (verbose) std::cout << "iteration :" << i + 1 << std::endl;
             const char *fOutName = "myTestOut.txt";
             BinaryFileParser binaryFileParser = BinaryFileParser(fname, fOutName, delimiter);
             std::ifstream is(fOutName, std::ios::binary | std::ios::in);
@@ -115,6 +118,7 @@ int main() {
 
 
     if(testType == "RUN") {
+
         std::cout << "RUN:" << std::endl;
         std::cout << "ARRAY FILE STREAMER:" << std::endl;
         srand(181);
@@ -147,7 +151,6 @@ int main() {
         myFile.close();
 
         //////////////////////////////////////////////////
-
 
         srand(181);
         std::cout << "ARRAY FILE READER:" << std::endl;
@@ -182,6 +185,7 @@ int main() {
 
         timer.start();
 
+
         for (size_t i = 0; i < iterations; i++) {
 
             if (verbose) std::cout << "iteration :" << i + 1 << std::endl;
@@ -189,14 +193,15 @@ int main() {
                 std::vector<double> row = binaryFileParser.getLine(rand()
                                                                    % binaryFileParser.getNumberOfLines(), is);
 
-                if (verbose && j % 10000 == 0 && j != 0) {
+                if (verbose && j % 1000 == 0 && j != 0) {
                     std::cout << j << std::endl;
                 }
             }
         }
+
         double binaryTime = timer.stop();
 
-
+        /*
         std::cout << "seconds per row read for ArrayStreamReader: " << streamTime /
                                                                        (iterations *
                                                                         (double) arrayFileReader.getNumberOfLines()) <<
@@ -208,15 +213,15 @@ int main() {
                                                                       (double) arrayFileReader.getNumberOfLines()) <<
         std::endl;
 
-
+        */
         std::cout << "seconds per row read for BinaryFileReader: " << binaryTime /
                                                                       (iterations *
-                                                                       (double) arrayFileReader.getNumberOfLines()) <<
+                                                                       (double) binaryFileParser.getNumberOfLines()) <<
         std::endl;
 
         std::cout << "----------------------------------------------" << std::endl;
-        std::cout << "Elapsed time of ArrayStreamReader runtime is " << streamTime << " seconds." << std::endl;
-        std::cout << "Elapsed time of ArrayFileReader runtime is " << readTime << " seconds." << std::endl;
+        //std::cout << "Elapsed time of ArrayStreamReader runtime is " << streamTime << " seconds." << std::endl;
+        //std::cout << "Elapsed time of ArrayFileReader runtime is " << readTime << " seconds." << std::endl;
         std::cout << "Elapsed time of BinaryFileReader runtime is " << binaryTime << " seconds." << std::endl;
     }
 
