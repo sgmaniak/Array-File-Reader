@@ -1,0 +1,1 @@
+This project includes several features attempting to improve the speed of reading a large matrix of doubles from disk.
