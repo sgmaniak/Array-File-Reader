@@ -58,11 +58,6 @@ BinaryFileParser::BinaryFileParser(const char *inFileName, const char *outputFil
     mNumberOfLines = 0;
     mDelimiter = delimiter;
     parse(inFileName, outputFileName);
-    pFile = fopen(outputFileName, "rb");
-}
-
-BinaryFileParser::~BinaryFileParser() {
-    fclose(pFile);
 }
 
 std::vector<double> BinaryFileParser::getLine(unsigned long lineNum, std::ifstream &is) {
@@ -72,7 +67,6 @@ std::vector<double> BinaryFileParser::getLine(unsigned long lineNum, std::ifstre
     is.seekg(mIndex[lineNum]);
     std::vector<double> line;
     double *row = new double[mElementsInRow[lineNum]];
-    //fgets(reinterpret_cast<char*>(row), mElementsInRow[lineNum] * sizeof(double), pFile);
     is.read(reinterpret_cast<char*>(row), std::streamsize(mElementsInRow[lineNum]*sizeof(double)));
     for(size_t i = 0; i <mElementsInRow[lineNum]; i++) {
         line.push_back(row[i]);

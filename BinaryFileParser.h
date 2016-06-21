@@ -17,7 +17,6 @@ private:
     unsigned long mNumberOfLines;
     std::vector<long> mIndex;
     std::vector<unsigned long> mElementsInRow;
-    FILE *pFile;
 
     template <typename T>
     void clearBuffer(T buffer[], const size_t bufferSize);
@@ -33,8 +32,6 @@ public:
     //**********
 
     BinaryFileParser(const char *inFileName, const char *outputFileName, const char delimiter);
-
-    ~BinaryFileParser();
 
     std::vector<double> getLine(unsigned long lineNum, std::ifstream &is);
 

@@ -59,12 +59,12 @@ int main() {
     const char *fname = "1Mx50.txt";
     const char delimiter = ' ';
     size_t iterations = 5;
-    double asrHandicap = 1;
-    double afrHandicap = 1;
+    double asrHandicap = 0.00001;
+    double afrHandicap = 0.01;
     bool verbose = true;
     std::cout << std::scientific;
     Timer timer = Timer();
-    const char *testType = "SETUP";
+    const char *testType = "RUN";
 
     ///////////////////////////////////////////
 
@@ -193,7 +193,7 @@ int main() {
                 std::vector<double> row = binaryFileParser.getLine(rand()
                                                                    % binaryFileParser.getNumberOfLines(), is);
 
-                if (verbose && j % 1000 == 0 && j != 0) {
+                if (verbose && j % 10000 == 0 && j != 0) {
                     std::cout << j << std::endl;
                 }
             }
@@ -222,7 +222,8 @@ int main() {
         std::cout << "----------------------------------------------" << std::endl;
         //std::cout << "Elapsed time of ArrayStreamReader runtime is " << streamTime << " seconds." << std::endl;
         //std::cout << "Elapsed time of ArrayFileReader runtime is " << readTime << " seconds." << std::endl;
-        std::cout << "Elapsed time of BinaryFileReader runtime is " << binaryTime << " seconds." << std::endl;
+        std::cout << "Seconds per data pass of BinaryFileReader runtime is " << binaryTime / iterations
+                                                                << " seconds." << std::endl;
     }
 
 
