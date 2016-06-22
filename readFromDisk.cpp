@@ -56,18 +56,17 @@ std::vector<double> getLineOfFile(std::ifstream &myFile, size_t lineNum, size_t 
 
 int main() {
 
-    const char *fname = "1Mx50.txt";
+    const char *fname = "5Mx50.txt";
     const char delimiter = ' ';
-    size_t iterations = 5;
-    double asrHandicap = 0.00001;
-    double afrHandicap = 0.01;
+    size_t iterations = 1;
+    double asrHandicap = 0.001;
+    double afrHandicap = 0.1;
+    double bfpHandicap = 0.001;
     bool verbose = true;
-    std::cout << std::scientific;
     Timer timer = Timer();
     const char *testType = "RUN";
 
     ///////////////////////////////////////////
-
 
 
     if(testType == "SETUP") {
@@ -120,6 +119,8 @@ int main() {
     if(testType == "RUN") {
 
         std::cout << "RUN:" << std::endl;
+
+        /*
         std::cout << "ARRAY FILE STREAMER:" << std::endl;
         srand(181);
         std::ifstream myFile;
@@ -172,7 +173,7 @@ int main() {
 
 
 
-        //////////////////////////////////////////////////
+        *//////////////////////////////////////////////////
 
 
 
@@ -182,26 +183,39 @@ int main() {
         const char *fOutName = "myTestOut.txt";
         BinaryFileParser binaryFileParser = BinaryFileParser(fname, fOutName, delimiter);
         std::ifstream is(fOutName, std::ios::binary | std::ios::in);
-
+        Timer timerSecond;
+        double getlineTimeOutside = 0;
+        double overHeadTime = 0;
         timer.start();
-
-
+        timerSecond.start();
         for (size_t i = 0; i < iterations; i++) {
-
             if (verbose) std::cout << "iteration :" << i + 1 << std::endl;
-            for (size_t j = 0; j < binaryFileParser.getNumberOfLines(); j++) {
+            for (size_t j = 0; j < binaryFileParser.getNumberOfLines() * bfpHandicap; j++) {
+                overHeadTime += timerSecond.stop();
+                timerSecond.start();
                 std::vector<double> row = binaryFileParser.getLine(rand()
                                                                    % binaryFileParser.getNumberOfLines(), is);
-
+                getlineTimeOutside += timerSecond.stop();
+                timerSecond.start();
                 if (verbose && j % 10000 == 0 && j != 0) {
                     std::cout << j << std::endl;
                 }
             }
         }
+        overHeadTime += timerSecond.stop();
 
-        double binaryTime = timer.stop();
+        double binaryTime = timer.stop() / bfpHandicap;
 
-        /*
+        std::cout << "percent of time due to seeking lines: " << 100 * binaryFileParser.tSeekTime / binaryTime << std::endl;
+        std::cout << "percent of time due to reading lines: " << 100 * binaryFileParser.tReadTime / binaryTime << std::endl;
+        std::cout << "percent of time due to populating vector: " << 100 * binaryFileParser.tArrayTime / binaryTime << std::endl;
+        std::cout << "Getline Total outside: " << 100 * getlineTimeOutside / binaryTime << std::endl;
+        std::cout << "Overhead time: " << 100 * overHeadTime / binaryTime << std::endl;
+
+
+        std::cout << std::scientific;
+
+                /*
         std::cout << "seconds per row read for ArrayStreamReader: " << streamTime /
                                                                        (iterations *
                                                                         (double) arrayFileReader.getNumberOfLines()) <<
@@ -219,11 +233,14 @@ int main() {
                                                                        (double) binaryFileParser.getNumberOfLines()) <<
         std::endl;
 
+
         std::cout << "----------------------------------------------" << std::endl;
         //std::cout << "Elapsed time of ArrayStreamReader runtime is " << streamTime << " seconds." << std::endl;
         //std::cout << "Elapsed time of ArrayFileReader runtime is " << readTime << " seconds." << std::endl;
         std::cout << "Seconds per data pass of BinaryFileReader runtime is " << binaryTime / iterations
-                                                                << " seconds." << std::endl;
+        << " seconds." << std::endl;
+
+
     }
 
 

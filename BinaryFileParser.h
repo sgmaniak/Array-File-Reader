@@ -9,6 +9,7 @@
 #include <fstream>
 #include <vector>
 #include <stdexcept>
+#include "Timer.h"
 
 class BinaryFileParser {
 
@@ -18,6 +19,12 @@ private:
     std::vector<long> mIndex;
     std::vector<unsigned long> mElementsInRow;
 
+    // for testing only **********
+    Timer tTimer;
+
+
+
+
     template <typename T>
     void clearBuffer(T buffer[], const size_t bufferSize);
 
@@ -26,6 +33,10 @@ private:
     void parse(const char *inFileName, const char *outFileName);
 
 public:
+    // for testing only **********
+    double tReadTime;
+    double tSeekTime;
+    double tArrayTime;
 
     //***********
     //NOTE: as of now, valid file format has delimiting character at the end of each line
