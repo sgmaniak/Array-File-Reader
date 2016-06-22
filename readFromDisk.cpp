@@ -66,6 +66,10 @@ int main() {
     Timer timer = Timer();
     const char *testType = "RUN";
 
+    std::cout << "iterations: " << iterations << std::endl;
+    std::cout << "BFR handicap: " << bfpHandicap << std::endl;
+
+
     ///////////////////////////////////////////
 
 
@@ -186,6 +190,7 @@ int main() {
         Timer timerSecond;
         double getlineTimeOutside = 0;
         double overHeadTime = 0;
+
         timer.start();
         timerSecond.start();
         for (size_t i = 0; i < iterations; i++) {
@@ -204,13 +209,16 @@ int main() {
         }
         overHeadTime += timerSecond.stop();
 
-        double binaryTime = timer.stop() / bfpHandicap;
+        double binaryTime = timer.stop();
 
         std::cout << "percent of time due to seeking lines: " << 100 * binaryFileParser.tSeekTime / binaryTime << std::endl;
         std::cout << "percent of time due to reading lines: " << 100 * binaryFileParser.tReadTime / binaryTime << std::endl;
         std::cout << "percent of time due to populating vector: " << 100 * binaryFileParser.tArrayTime / binaryTime << std::endl;
-        std::cout << "Getline Total outside: " << 100 * getlineTimeOutside / binaryTime << std::endl;
-        std::cout << "Overhead time: " << 100 * overHeadTime / binaryTime << std::endl;
+        std::cout << "percent Getline Total outside: " << 100 * getlineTimeOutside / binaryTime << std::endl;
+        std::cout << "percent Overhead time: " << 100 * overHeadTime / binaryTime << std::endl;
+        std::cout << "Getline Total outside: " << getlineTimeOutside << std::endl;
+        std::cout << "Overhead time: " << overHeadTime << std::endl;
+        std::cout << "Elapsed time: " << binaryTime << std::endl;
 
 
         std::cout << std::scientific;
