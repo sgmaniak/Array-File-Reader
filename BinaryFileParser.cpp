@@ -1,3 +1,4 @@
+#include <sstream>
 #include "BinaryFileParser.h"
 
 template <typename T>
@@ -32,7 +33,9 @@ void BinaryFileParser::parse(const char *inFileName, const char *outFileName) {
     inFile = fopen(inFileName, "rb");
     if (inFile==NULL) perror ("Error opening input file");
     std::ofstream os(outFileName, std::ios::binary | std::ios::out);
+    mFileList.push_back(outFileName);
     std::vector<char> line;
+    std::vector<long> currentIndex;
     unsigned long lineSize = 0;
     char c;
 
@@ -41,15 +44,27 @@ void BinaryFileParser::parse(const char *inFileName, const char *outFileName) {
         line.push_back(c);
         if (c == mDelimiter) lineSize++;
         if ((int)c == 10 || c == EOF) {
-            mIndex.push_back((long)os.tellp());
+            currentIndex.push_back((long)os.tellp());
             mElementsInRow.push_back(lineSize);
             os.write(reinterpret_cast<const char*>(parseCharToDouble(line, lineSize)),
                      std::streamsize(lineSize*sizeof(double)));
             mNumberOfLines++;
             lineSize = 0;
             line.clear();
+            if(mNumberOfLines % OUT_FILE_SIZE == 0) {
+                os.close();
+                mIndex.push_back(currentIndex);
+                std::ostringstream oss;
+                oss << mIndex.size() << "-";
+                std::string newFName = oss.str() + outFileName;
+                os.open(newFName, std::ios::binary | std::ios::out);
+                currentIndex.clear();
+            }
         }
     } while(c != EOF);
+    if (mNumberOfLines < OUT_FILE_SIZE) {
+        mIndex.push_back(currentIndex);
+    }
     fclose(inFile);
     os.close();
 }
@@ -63,12 +78,13 @@ BinaryFileParser::BinaryFileParser(const char *inFileName, const char *outputFil
     parse(inFileName, outputFileName);
 }
 
-std::vector<double> BinaryFileParser::getLine(unsigned long lineNum, std::ifstream &is) {
+std::vector<double> BinaryFileParser::getLine(unsigned long lineNum) {
     if (lineNum >= mNumberOfLines) {
         throw std::invalid_argument("Requested invalid line number " + lineNum);
     }
+    std::ifstream is(mFileList[lineNum/OUT_FILE_SIZE], std::ios::binary | std::ios::in);
     tTimer.start();
-    is.seekg(mIndex[lineNum]);
+    is.seekg(mIndex[lineNum/OUT_FILE_SIZE][lineNum % OUT_FILE_SIZE]);
     tSeekTime += tTimer.stop();
     std::vector<double> line;
     double *row = new double[mElementsInRow[lineNum]];

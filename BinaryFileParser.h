@@ -6,6 +6,7 @@
 
 
 #include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <vector>
 #include <stdexcept>
@@ -13,11 +14,14 @@
 
 class BinaryFileParser {
 
+    size_t OUT_FILE_SIZE = 100000;
+
 private:
     char mDelimiter;
     unsigned long mNumberOfLines;
-    std::vector<long> mIndex;
+    std::vector<std::vector<long>> mIndex;
     std::vector<unsigned long> mElementsInRow;
+    std::vector<const char*> mFileList;
 
     // for testing only **********
     Timer tTimer;
@@ -44,7 +48,7 @@ public:
 
     BinaryFileParser(const char *inFileName, const char *outputFileName, const char delimiter);
 
-    std::vector<double> getLine(unsigned long lineNum, std::ifstream &is);
+    std::vector<double> getLine(unsigned long lineNum);
 
     unsigned long getNumberOfLines() {return mNumberOfLines;}
 
