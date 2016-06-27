@@ -51,13 +51,14 @@ void BinaryFileParser::parse(const char *inFileName, const char *outFileName) {
             mNumberOfLines++;
             lineSize = 0;
             line.clear();
-            if(mNumberOfLines % OUT_FILE_SIZE == 0) {
+            if(mNumberOfLines % OUT_FILE_SIZE == 0 && c != EOF) {
                 os.close();
                 mIndex.push_back(currentIndex);
                 std::ostringstream oss;
-                oss << mIndex.size() << "-";
+                oss << mFileList.size() << "-";
                 std::string newFName = oss.str() + outFileName;
                 os.open(newFName, std::ios::binary | std::ios::out);
+                mFileList.push_back(newFName);
                 currentIndex.clear();
             }
         }
@@ -74,20 +75,35 @@ BinaryFileParser::BinaryFileParser(const char *inFileName, const char *outputFil
     tReadTime = 0;
     tSeekTime = 0;
     tArrayTime = 0;
+    tFileTime = 0;
+    tCreateTime = 0;
     mDelimiter = delimiter;
     parse(inFileName, outputFileName);
+}
+
+BinaryFileParser::~BinaryFileParser() {
+    for(size_t i = 0; i < mFileList.size(); i++) {
+        if( remove(mFileList[i].c_str()) != 0 ) {
+            perror("Error deleting file");
+            std::cout << mFileList[i] << std::endl;
+        }
+    }
 }
 
 std::vector<double> BinaryFileParser::getLine(unsigned long lineNum) {
     if (lineNum >= mNumberOfLines) {
         throw std::invalid_argument("Requested invalid line number " + lineNum);
     }
-    std::ifstream is(mFileList[lineNum/OUT_FILE_SIZE], std::ios::binary | std::ios::in);
     tTimer.start();
-    is.seekg(mIndex[lineNum/OUT_FILE_SIZE][lineNum % OUT_FILE_SIZE]);
+    std::ifstream is(mFileList[lineNum / OUT_FILE_SIZE], std::ios::binary | std::ios::in);
+    tFileTime += tTimer.stop();
+    tTimer.start();
+    is.seekg(mIndex[lineNum / OUT_FILE_SIZE][lineNum % OUT_FILE_SIZE]);
     tSeekTime += tTimer.stop();
+    tTimer.start();
     std::vector<double> line;
     double *row = new double[mElementsInRow[lineNum]];
+    tCreateTime += tTimer.stop();
     tTimer.start();
     is.read(reinterpret_cast<char*>(row), std::streamsize(mElementsInRow[lineNum]*sizeof(double)));
     tReadTime += tTimer.stop();

@@ -56,11 +56,11 @@ std::vector<double> getLineOfFile(std::ifstream &myFile, size_t lineNum, size_t 
 
 int main() {
 
-    const char *fname = "5Mx50.txt";
+    const char *fname = "1Mx50.txt";
     const char delimiter = ' ';
     size_t iterations = 1;
     double asrHandicap = 1;
-    double afrHandicap = 0.0001;
+    double afrHandicap = 0;
     double bfpHandicap = 1;
     bool verbose = true;
     Timer timer = Timer();
@@ -168,7 +168,7 @@ int main() {
             if (verbose) std::cout << "iteration :" << i + 1 << std::endl;
             for (size_t j = 0; j < arrayFileReader.getNumberOfLines() * afrHandicap; j++) {
                 std::vector<double> row = arrayFileReader.getLine(rand()
-                                                                  % arrayFileReader.getNumberOfLines());
+                                                                  % (arrayFileReader.getNumberOfLines()));
                 if (verbose && j % 10000 == 0 && j != 0) {
                     std::cout << j << std::endl;
                 }
@@ -188,13 +188,14 @@ int main() {
 
         const char *fOutName = "myTestOut.txt";
         BinaryFileParser binaryFileParser = BinaryFileParser(fname, fOutName, delimiter);
+        Timer getLineTimer = Timer();
 
         timer.start();
         for (size_t i = 0; i < iterations; i++) {
             if (verbose) std::cout << "iteration :" << i + 1 << std::endl;
             for (size_t j = 0; j < binaryFileParser.getNumberOfLines() * bfpHandicap; j++) {
                 std::vector<double> row = binaryFileParser.getLine(rand()
-                                                                   % binaryFileParser.getNumberOfLines());
+                                                                   % (binaryFileParser.getNumberOfLines() - 1));
                 if (verbose && j % 10000 == 0 && j != 0) {
                     std::cout << j << std::endl;
                 }
@@ -202,11 +203,14 @@ int main() {
         }
 
         double binaryTime = timer.stop();
-
-        std::cout << "percent of time due to seeking lines: " << 100 * binaryFileParser.tSeekTime / binaryTime << std::endl;
-        std::cout << "percent of time due to reading lines: " << 100 * binaryFileParser.tReadTime / binaryTime << std::endl;
-        std::cout << "percent of time due to populating vector: " << 100 * binaryFileParser.tArrayTime / binaryTime << std::endl;
+        std::cout << "ratio of time due to seeking lines to total time: " << binaryFileParser.tSeekTime / binaryTime << std::endl;
+        std::cout << "ratio of time due to reading lines to total time: " << binaryFileParser.tReadTime / binaryTime << std::endl;
+        std::cout << "ratio of time due to populating vector to total time: " << binaryFileParser.tArrayTime / binaryTime << std::endl;
+        std::cout << "ratio of time due to File opening to total time: " << binaryFileParser.tFileTime / binaryTime << std::endl;
+        std::cout << "ratio of time due to creating arrays to total time: " << binaryFileParser.tCreateTime / binaryTime << std::endl;
+        std::cout << "ratio of added times to total time: " << binaryFileParser.tCreateTime / binaryTime << std::endl;
         std::cout << "Elapsed time: " << binaryTime << std::endl;
+
 
 
         std::cout << std::scientific;
@@ -236,6 +240,13 @@ int main() {
         std::cout << "Seconds per data pass of BinaryFileReader runtime is " << binaryTime / iterations * bfpHandicap
         << " seconds." << std::endl;
 
+
+        printLines(binaryFileParser.getLine(0));
+        printLines(arrayFileReader.getLine(0));
+        printLines(binaryFileParser.getLine((binaryFileParser.getNumberOfLines() / 2) + 5));
+        printLines(arrayFileReader.getLine((arrayFileReader.getNumberOfLines() / 2) + 5));
+        printLines(binaryFileParser.getLine(binaryFileParser.getNumberOfLines() - 2));
+        printLines(arrayFileReader.getLine(arrayFileReader.getNumberOfLines() - 2));
 
     }
 

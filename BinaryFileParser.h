@@ -10,18 +10,19 @@
 #include <fstream>
 #include <vector>
 #include <stdexcept>
+#include <iostream>
 #include "Timer.h"
 
 class BinaryFileParser {
 
-    size_t OUT_FILE_SIZE = 100000;
+    size_t OUT_FILE_SIZE = 1000;
 
 private:
     char mDelimiter;
     unsigned long mNumberOfLines;
     std::vector<std::vector<long>> mIndex;
     std::vector<unsigned long> mElementsInRow;
-    std::vector<const char*> mFileList;
+    std::vector<std::string> mFileList;
 
     // for testing only **********
     Timer tTimer;
@@ -41,12 +42,15 @@ public:
     double tReadTime;
     double tSeekTime;
     double tArrayTime;
-
+    double tFileTime;
+    double tCreateTime;
     //***********
     //NOTE: as of now, valid file format has delimiting character at the end of each line
     //**********
 
     BinaryFileParser(const char *inFileName, const char *outputFileName, const char delimiter);
+
+    ~BinaryFileParser();
 
     std::vector<double> getLine(unsigned long lineNum);
 
