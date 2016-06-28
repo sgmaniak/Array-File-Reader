@@ -20,8 +20,8 @@ class BinaryFileParser {
 private:
     char mDelimiter;
     unsigned long mNumberOfLines;
+    unsigned long mElementsInRow;
     std::vector<std::vector<long>> mIndex;
-    std::vector<unsigned long> mElementsInRow;
     std::vector<std::string> mFileList;
 
     // for testing only **********
@@ -33,6 +33,8 @@ private:
     template <typename T>
     void clearBuffer(T buffer[], const size_t bufferSize);
 
+    unsigned long findNumElementsInRow(const char *inFileName);
+
     double* parseCharToDouble(const std::vector<char> &c, const size_t size);
 
     void parse(const char *inFileName, const char *outFileName);
@@ -41,9 +43,7 @@ public:
     // for testing only **********
     double tReadTime;
     double tSeekTime;
-    double tArrayTime;
     double tFileTime;
-    double tCreateTime;
     //***********
     //NOTE: as of now, valid file format has delimiting character at the end of each line
     //**********

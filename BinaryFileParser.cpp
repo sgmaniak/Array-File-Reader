@@ -8,6 +8,16 @@ void BinaryFileParser::clearBuffer(T buffer[], const size_t bufferSize){
     }
 }
 
+unsigned long BinaryFileParser::findNumElementsInRow(const char *inFileName) {
+    unsigned long rowSize = 0;
+    char c;
+    std::ifstream is(inFileName, std::ios::binary | std::ios::in);
+    do {
+        is.get(c);
+        if(c == mDelimiter) rowSize++;
+    } while((int)c != 10 && c != EOF);
+    return rowSize;
+}
 
 double* BinaryFileParser::parseCharToDouble(const std::vector<char> &c, const size_t size) {
     double *d = new double[size];
@@ -36,20 +46,16 @@ void BinaryFileParser::parse(const char *inFileName, const char *outFileName) {
     mFileList.push_back(outFileName);
     std::vector<char> line;
     std::vector<long> currentIndex;
-    unsigned long lineSize = 0;
     char c;
 
     do {
         c = (char)fgetc(inFile);
         line.push_back(c);
-        if (c == mDelimiter) lineSize++;
         if ((int)c == 10) {
             currentIndex.push_back((long)os.tellp());
-            mElementsInRow.push_back(lineSize);
-            os.write(reinterpret_cast<const char*>(parseCharToDouble(line, lineSize)),
-                     std::streamsize(lineSize*sizeof(double)));
+            os.write(reinterpret_cast<const char*>(parseCharToDouble(line, mElementsInRow)),
+                     std::streamsize(mElementsInRow*sizeof(double)));
             mNumberOfLines++;
-            lineSize = 0;
             line.clear();
             if(mNumberOfLines % OUT_FILE_SIZE == 0) {
                 os.close();
@@ -74,10 +80,9 @@ BinaryFileParser::BinaryFileParser(const char *inFileName, const char *outputFil
     mNumberOfLines = 0;
     tReadTime = 0;
     tSeekTime = 0;
-    tArrayTime = 0;
     tFileTime = 0;
-    tCreateTime = 0;
     mDelimiter = delimiter;
+    mElementsInRow = findNumElementsInRow(inFileName);
     parse(inFileName, outputFileName);
 }
 
@@ -102,16 +107,14 @@ std::vector<double> BinaryFileParser::getLine(unsigned long lineNum) {
     tSeekTime += tTimer.stop();
     tTimer.start();
     std::vector<double> line;
-    double *row = new double[mElementsInRow[lineNum]];
-    tCreateTime += tTimer.stop();
+    double *row = new double[mElementsInRow];
     tTimer.start();
-    is.read(reinterpret_cast<char*>(row), std::streamsize(mElementsInRow[lineNum]*sizeof(double)));
+    is.read(reinterpret_cast<char*>(row), std::streamsize(mElementsInRow * sizeof(double)));
     tReadTime += tTimer.stop();
     tTimer.start();
-    for(size_t i = 0; i <mElementsInRow[lineNum]; i++) {
+    for(size_t i = 0; i < mElementsInRow; i++) {
         line.push_back(row[i]);
     }
-    tArrayTime += tTimer.stop();
     delete row;
     return line;
 }

@@ -205,10 +205,7 @@ int main() {
         double binaryTime = timer.stop();
         std::cout << "ratio of time due to seeking lines to total time: " << binaryFileParser.tSeekTime / binaryTime << std::endl;
         std::cout << "ratio of time due to reading lines to total time: " << binaryFileParser.tReadTime / binaryTime << std::endl;
-        std::cout << "ratio of time due to populating vector to total time: " << binaryFileParser.tArrayTime / binaryTime << std::endl;
         std::cout << "ratio of time due to File opening to total time: " << binaryFileParser.tFileTime / binaryTime << std::endl;
-        std::cout << "ratio of time due to creating arrays to total time: " << binaryFileParser.tCreateTime / binaryTime << std::endl;
-        std::cout << "ratio of added times to total time: " << binaryFileParser.tCreateTime / binaryTime << std::endl;
         std::cout << "Elapsed time: " << binaryTime << std::endl;
 
 
