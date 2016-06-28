@@ -29,7 +29,6 @@ void ArrayFileReader<T>::buildFileIndices(){
         }
         c = (char)fgetc(pFile);
     }
-    mNumberOfLines++;
 }
 
 //reset buffer to white space to overwrite previous double held

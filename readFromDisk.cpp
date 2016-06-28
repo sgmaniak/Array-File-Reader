@@ -56,7 +56,7 @@ std::vector<double> getLineOfFile(std::ifstream &myFile, size_t lineNum, size_t 
 
 int main() {
 
-    const char *fname = "1Mx50.txt";
+    const char *fname = "100Kx50.txt";
     const char delimiter = ' ';
     size_t iterations = 1;
     double asrHandicap = 1;
@@ -195,7 +195,7 @@ int main() {
             if (verbose) std::cout << "iteration :" << i + 1 << std::endl;
             for (size_t j = 0; j < binaryFileParser.getNumberOfLines() * bfpHandicap; j++) {
                 std::vector<double> row = binaryFileParser.getLine(rand()
-                                                                   % (binaryFileParser.getNumberOfLines() - 1));
+                                                                   % (binaryFileParser.getNumberOfLines()));
                 if (verbose && j % 10000 == 0 && j != 0) {
                     std::cout << j << std::endl;
                 }
@@ -243,8 +243,8 @@ int main() {
 
         printLines(binaryFileParser.getLine(0));
         printLines(arrayFileReader.getLine(0));
-        printLines(binaryFileParser.getLine((binaryFileParser.getNumberOfLines() / 2) + 5));
-        printLines(arrayFileReader.getLine((arrayFileReader.getNumberOfLines() / 2) + 5));
+        printLines(binaryFileParser.getLine((binaryFileParser.getNumberOfLines() / 2) + 4));
+        printLines(arrayFileReader.getLine((arrayFileReader.getNumberOfLines() / 2) + 4));
         printLines(binaryFileParser.getLine(binaryFileParser.getNumberOfLines() - 2));
         printLines(arrayFileReader.getLine(arrayFileReader.getNumberOfLines() - 2));
 

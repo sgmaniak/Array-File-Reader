@@ -43,7 +43,7 @@ void BinaryFileParser::parse(const char *inFileName, const char *outFileName) {
         c = (char)fgetc(inFile);
         line.push_back(c);
         if (c == mDelimiter) lineSize++;
-        if ((int)c == 10 || c == EOF) {
+        if ((int)c == 10) {
             currentIndex.push_back((long)os.tellp());
             mElementsInRow.push_back(lineSize);
             os.write(reinterpret_cast<const char*>(parseCharToDouble(line, lineSize)),
@@ -51,7 +51,7 @@ void BinaryFileParser::parse(const char *inFileName, const char *outFileName) {
             mNumberOfLines++;
             lineSize = 0;
             line.clear();
-            if(mNumberOfLines % OUT_FILE_SIZE == 0 && c != EOF) {
+            if(mNumberOfLines % OUT_FILE_SIZE == 0) {
                 os.close();
                 mIndex.push_back(currentIndex);
                 std::ostringstream oss;
