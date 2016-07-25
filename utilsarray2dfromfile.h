@@ -3,6 +3,7 @@
 //
 
 #include <cstdio>
+#include <sys/stat.h>
 
 template <typename T>
 void clear_buffer(T buffer[], const size_t buffer_size) {

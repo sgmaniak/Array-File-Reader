@@ -10,6 +10,10 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <vector>
+#include <memory>
+#include <iostream>
+#include <limits>
 #include "utilsarray2dfromfile.h"
 
 template <typename T>
@@ -23,7 +27,7 @@ private:
     ulong _n_rows;
     std::vector<std::string> _file_list;
     std::vector<std::string> _index_file_list;
-    std::vector<std::tuple<long>> _index;
+    std::vector<std::tuple<long, long>> _index;
     std::vector<ulong> _nvalues_index;
 
     void clear_output_files();

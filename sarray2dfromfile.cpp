@@ -2,12 +2,7 @@
 // Created by anderson on 7/22/16.
 //
 
-#include <vector>
-#include <memory>
-#include <iostream>
-#include <limits>
 #include "sarray2dfromfile.h"
-
 
 template <typename T>
 void SArray2dFromFile<T>::clear_output_files() {
@@ -99,8 +94,8 @@ void SArray2dFromFile<T>::parse(const std::string &file_name) {
             total_vals += n_vals;
             _index.push_back(std::make_tuple(data_file.tellp(), index_file.tellp()));
 
-            std::unique_ptr<T[]> t = new T[n_vals];
-            std::unique_ptr<T[]> t_cols = new T[n_vals];
+            std::unique_ptr<T[]> t(new T[n_vals]);
+            std::unique_ptr<ulong[]> t_cols(new ulong[n_vals]);
             for(ulong i = 0; i < n_vals; i++) {
                 t[i] = get_next_value_in_stream<T>(a_reader);
                 t_cols[i] = get_next_value_in_stream<ulong>(ja_reader);
@@ -143,6 +138,7 @@ void SArray2dFromFile<T>::parse(const std::string &file_name) {
 
 template <typename T>
 SArray2dFromFile<T>::SArray2dFromFile(const std::string &file_name){
+    if(!file_exists(file_name)) throw std::invalid_argument("File does not exist");
     parse(file_name);
 }
 
@@ -154,10 +150,13 @@ T* SArray2dFromFile<T>::get_row(unsigned long row_num) {
     data_reader.seekg(std::get<0>(_index[row_num / OUT_FILE_SIZE]));
     index_reader.seekg(std::get<1>(_index[row_num / OUT_FILE_SIZE]));
     ulong num_vals = _nvalues_index[row_num];
-    std::unique_ptr<T[]> t_vals = new T[num_vals];
+
+    std::unique_ptr<T[]> t_vals(new T[num_vals]);
     read_bytes(data_reader, t_vals.get(), num_vals);
-    std::unique_ptr<ulong[]> t_cols = new T[num_vals];
+
+    std::unique_ptr<ulong[]> t_cols(new ulong[num_vals]);
     read_bytes(index_reader, t_cols.get(), num_vals);
+
     ulong n_columns = t_cols[num_vals - 1];
     T* row = new T[n_columns];
     for (ulong i = 0; i < n_columns; ++i) {
@@ -168,3 +167,12 @@ T* SArray2dFromFile<T>::get_row(unsigned long row_num) {
     }
     return row;
 }
+
+template class SArray2dFromFile<float>;
+template class SArray2dFromFile<int>;
+template class SArray2dFromFile<unsigned int>;
+template class SArray2dFromFile<short>;
+template class SArray2dFromFile<unsigned short>;
+template class SArray2dFromFile<long>;
+template class SArray2dFromFile<unsigned long>;
+template class SArray2dFromFile<double>;
