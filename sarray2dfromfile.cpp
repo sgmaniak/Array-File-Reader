@@ -12,6 +12,12 @@ void SArray2dFromFile<T>::clear_output_files() {
         }
         _file_list.pop_back();
     }
+    for(size_t i = 0; i < _index_file_list.size(); i++) {
+        if( remove(_index_file_list.back().c_str()) != 0 ) {
+            std::cerr << "Error deleting file" << _index_file_list.back() << std::endl;
+        }
+        _index_file_list.pop_back();
+    }
 }
 
 template <typename T>
@@ -94,15 +100,17 @@ void SArray2dFromFile<T>::parse(const std::string &file_name) {
             total_vals += n_vals;
             _index.push_back(std::make_tuple(data_file.tellp(), index_file.tellp()));
 
-            std::unique_ptr<T[]> t(new T[n_vals]);
-            std::unique_ptr<ulong[]> t_cols(new ulong[n_vals]);
+            std::vector<T> t;
+            std::vector<ulong> t_cols;
             for(ulong i = 0; i < n_vals; i++) {
-                t[i] = get_next_value_in_stream<T>(a_reader);
-                t_cols[i] = get_next_value_in_stream<ulong>(ja_reader);
+                t.push_back(get_next_value_in_stream<T>(a_reader));
+                t_cols.push_back(get_next_value_in_stream<ulong>(ja_reader));
             }
             _nvalues_index.push_back(n_vals);
-            write_bytes(data_file, t.get(), n_vals);
-            write_bytes(index_file, t_cols.get(), n_vals);
+            T *t_ptr = &t[0];
+            ulong *t_col_ptr = &t_cols[0];
+            write_bytes(data_file, t_ptr, n_vals);
+            write_bytes(index_file, t_col_ptr, n_vals);
             _n_rows++;
 
             if (_n_rows % OUT_FILE_SIZE == 0) {
@@ -139,7 +147,13 @@ void SArray2dFromFile<T>::parse(const std::string &file_name) {
 template <typename T>
 SArray2dFromFile<T>::SArray2dFromFile(const std::string &file_name){
     if(!file_exists(file_name)) throw std::invalid_argument("File does not exist");
+    _n_rows = 0;
     parse(file_name);
+}
+
+template <typename T>
+SArray2dFromFile<T>::~SArray2dFromFile() {
+    clear_output_files();
 }
 
 template <typename T>

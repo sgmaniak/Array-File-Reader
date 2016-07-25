@@ -45,7 +45,11 @@ public:
 
     SArray2dFromFile(const std::string &file_name);
 
+    ~SArray2dFromFile();
+
     T* get_row(unsigned long row_num);
+
+    unsigned long get_num_cols_in_row(ulong row_num) const {return _nvalues_index[row_num];};
 
     unsigned long get_num_rows() const {return _n_rows;};
 
