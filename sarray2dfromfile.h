@@ -23,6 +23,8 @@ private:
     ulong _n_rows;
     std::vector<std::string> _file_list;
     std::vector<std::string> _index_file_list;
+    std::vector<std::tuple<long>> _index;
+    std::vector<ulong> _nvalues_index;
 
     void clear_output_files();
 

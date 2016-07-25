@@ -78,11 +78,11 @@ void SArray2dFromFile<T>::parse(const std::string &file_name) {
     if(get_next_value_in_stream<ulong>(ia_reader) != 0)
         throw std::invalid_argument("IA array must begin with 0 by definition");
 
-    // find available file name to avoid overwriting existing files potentially
-    // owned by other fileparser objects
     ulong cur_data_file_index = 0;
     ulong cur_index_file_index = 0;
 
+    // find available file name to avoid overwriting existing files potentially
+    // owned by other fileparser objects
     std::string cur_outfile_name = find_available_file_name(cur_data_file_index, OUT_FILE_NAME);
     std::ofstream data_file(cur_outfile_name, std::ios::binary | std::ios::out);
     _file_list.push_back(cur_outfile_name);
@@ -92,20 +92,34 @@ void SArray2dFromFile<T>::parse(const std::string &file_name) {
     _index_file_list.push_back(cur_outfile_name);
 
     try {
+        ulong total_vals = 0;
         ulong n_vals = get_next_value_in_stream<ulong>(ia_reader);
         do {
-            std::unique_ptr<T[]> t_row = new T[n_vals];
+            n_vals -= total_vals;
+            total_vals += n_vals;
+            _index.push_back(std::make_tuple(data_file.tellp(), index_file.tellp()));
+
+            std::unique_ptr<T[]> t = new T[n_vals];
+            std::unique_ptr<T[]> t_cols = new T[n_vals];
             for(ulong i = 0; i < n_vals; i++) {
-                t_row[i] = get_next_value_in_stream<T>(a_reader);
+                t[i] = get_next_value_in_stream<T>(a_reader);
+                t_cols[i] = get_next_value_in_stream<ulong>(ja_reader);
             }
-            data_file.write(reinterpret_cast<const char *>(t_row.get()),
-                     std::streamsize(n_vals * sizeof(T)));
+            _nvalues_index.push_back(n_vals);
+            write_bytes(data_file, t.get(), n_vals);
+            write_bytes(index_file, t_cols.get(), n_vals);
             _n_rows++;
+
             if (_n_rows % OUT_FILE_SIZE == 0) {
                 data_file.close();
                 cur_outfile_name = find_available_file_name(cur_data_file_index, OUT_FILE_NAME);
                 data_file.open(cur_outfile_name, std::ios::binary | std::ios::out);
                 _file_list.push_back(cur_outfile_name);
+
+                index_file.close();
+                cur_outfile_name = find_available_file_name(cur_index_file_index, OUT_FILE_NAME);
+                index_file.open(cur_outfile_name, std::ios::binary | std::ios::out);
+                _index_file_list.push_back(cur_outfile_name);
             }
             n_vals = get_next_value_in_stream<ulong>(ia_reader);
         } while (n_vals != 0);
@@ -135,6 +149,22 @@ SArray2dFromFile<T>::SArray2dFromFile(const std::string &file_name){
 template <typename T>
 T* SArray2dFromFile<T>::get_row(unsigned long row_num) {
     if(row_num >= _n_rows) throw std::invalid_argument("Invalid row_num " + row_num);
-    std::ifstream ia_reader(_file_list.at(row_num / OUT_FILE_SIZE), std::ios::binary | std::ios::in);
-    ia_reader.seekg(row_num * sizeof(T));
+    std::ifstream data_reader(_file_list.at(row_num / OUT_FILE_SIZE), std::ios::binary | std::ios::in);
+    std::ifstream index_reader(_index_file_list.at(row_num / OUT_FILE_SIZE), std::ios::binary | std::ios::in);
+    data_reader.seekg(std::get<0>(_index[row_num / OUT_FILE_SIZE]));
+    index_reader.seekg(std::get<1>(_index[row_num / OUT_FILE_SIZE]));
+    ulong num_vals = _nvalues_index[row_num];
+    std::unique_ptr<T[]> t_vals = new T[num_vals];
+    read_bytes(data_reader, t_vals.get(), num_vals);
+    std::unique_ptr<ulong[]> t_cols = new T[num_vals];
+    read_bytes(index_reader, t_cols.get(), num_vals);
+    ulong n_columns = t_cols[num_vals - 1];
+    T* row = new T[n_columns];
+    for (ulong i = 0; i < n_columns; ++i) {
+        row[i] = 0;
+    }
+    for (ulong i = 0; i < num_vals; ++i) {
+        row[t_cols[i]] = t_vals[i];
+    }
+    return row;
 }
