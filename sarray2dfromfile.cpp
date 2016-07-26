@@ -6,11 +6,11 @@
 
 template <typename T>
 void SArray2dFromFile<T>::clear_output_files() {
-    for(size_t i = 0; i < _file_list.size(); i++) {
-        if( remove(_file_list.back().c_str()) != 0 ) {
-            std::cerr << "Error deleting file" << _file_list.back() << std::endl;
+    for(size_t i = 0; i < _data_file_list.size(); i++) {
+        if( remove(_data_file_list.back().c_str()) != 0 ) {
+            std::cerr << "Error deleting file" << _data_file_list.back() << std::endl;
         }
-        _file_list.pop_back();
+        _data_file_list.pop_back();
     }
     for(size_t i = 0; i < _index_file_list.size(); i++) {
         if( remove(_index_file_list.back().c_str()) != 0 ) {
@@ -41,6 +41,19 @@ std::string SArray2dFromFile<T>::find_available_file_name(ulong &cur_file_index,
     return cur_outfile_name;
 }
 
+//returns the stream at the same position
+template <typename T>
+ulong SArray2dFromFile<T>::find_num_columns(std::ifstream &ja_reader, long end_position) const {
+    const long init_position = ja_reader.tellg();
+    ulong max = 0;
+    while(ja_reader.tellg() < end_position) {
+        ulong cur = get_next_value_in_stream<ulong>(ja_reader);
+        if(max < cur) max = cur;
+    }
+    ja_reader.seekg(init_position);
+    return max + 1;
+}
+
 template <typename T>
 template <typename U>
 const U SArray2dFromFile<T>::get_next_value_in_stream(std::ifstream &is) const {
@@ -58,8 +71,9 @@ const U SArray2dFromFile<T>::get_next_value_in_stream(std::ifstream &is) const {
         is.get(c);
         i++;
     }while(!is_delimiter(c)
-           && !(is.peek() == 10 || is.peek() == EOF || is.peek() == 0)
-           && i < buffer_size);
+           && !(c == 10 || c == EOF || c == 0)
+           && i < buffer_size
+           && is.good());
     return parse_buffer_to_datatype<U>(buffer);
 }
 
@@ -79,6 +93,8 @@ void SArray2dFromFile<T>::parse(const std::string &file_name) {
     if(get_next_value_in_stream<ulong>(ia_reader) != 0)
         throw std::invalid_argument("IA array must begin with 0 by definition");
 
+    _n_cols = find_num_columns(ja_reader, ia_reader.tellg());
+
     ulong cur_data_file_index = 0;
     ulong cur_index_file_index = 0;
 
@@ -86,7 +102,7 @@ void SArray2dFromFile<T>::parse(const std::string &file_name) {
     // owned by other fileparser objects
     std::string cur_outfile_name = find_available_file_name(cur_data_file_index, OUT_FILE_NAME);
     std::ofstream data_file(cur_outfile_name, std::ios::binary | std::ios::out);
-    _file_list.push_back(cur_outfile_name);
+    _data_file_list.push_back(cur_outfile_name);
 
     cur_outfile_name = find_available_file_name(cur_index_file_index, INDEX_OUT_FILE_NAME);
     std::ofstream index_file(cur_outfile_name, std::ios::binary | std::ios::out);
@@ -98,7 +114,7 @@ void SArray2dFromFile<T>::parse(const std::string &file_name) {
         do {
             n_vals -= total_vals;
             total_vals += n_vals;
-            _index.push_back(std::make_tuple(data_file.tellp(), index_file.tellp()));
+            _file_position_index.push_back((long)data_file.tellp());
 
             std::vector<T> t;
             std::vector<ulong> t_cols;
@@ -117,7 +133,7 @@ void SArray2dFromFile<T>::parse(const std::string &file_name) {
                 data_file.close();
                 cur_outfile_name = find_available_file_name(cur_data_file_index, OUT_FILE_NAME);
                 data_file.open(cur_outfile_name, std::ios::binary | std::ios::out);
-                _file_list.push_back(cur_outfile_name);
+                _data_file_list.push_back(cur_outfile_name);
 
                 index_file.close();
                 cur_outfile_name = find_available_file_name(cur_index_file_index, OUT_FILE_NAME);
@@ -148,6 +164,7 @@ template <typename T>
 SArray2dFromFile<T>::SArray2dFromFile(const std::string &file_name){
     if(!file_exists(file_name)) throw std::invalid_argument("File does not exist");
     _n_rows = 0;
+    _n_cols = 0;
     parse(file_name);
 }
 
@@ -159,10 +176,10 @@ SArray2dFromFile<T>::~SArray2dFromFile() {
 template <typename T>
 T* SArray2dFromFile<T>::get_row(unsigned long row_num) {
     if(row_num >= _n_rows) throw std::invalid_argument("Invalid row_num " + row_num);
-    std::ifstream data_reader(_file_list.at(row_num / OUT_FILE_SIZE), std::ios::binary | std::ios::in);
+    std::ifstream data_reader(_data_file_list.at(row_num / OUT_FILE_SIZE), std::ios::binary | std::ios::in);
     std::ifstream index_reader(_index_file_list.at(row_num / OUT_FILE_SIZE), std::ios::binary | std::ios::in);
-    data_reader.seekg(std::get<0>(_index[row_num / OUT_FILE_SIZE]));
-    index_reader.seekg(std::get<1>(_index[row_num / OUT_FILE_SIZE]));
+    data_reader.seekg(_file_position_index[row_num]);
+    index_reader.seekg(_file_position_index[row_num]);
     ulong num_vals = _nvalues_index[row_num];
 
     std::unique_ptr<T[]> t_vals(new T[num_vals]);
@@ -171,9 +188,8 @@ T* SArray2dFromFile<T>::get_row(unsigned long row_num) {
     std::unique_ptr<ulong[]> t_cols(new ulong[num_vals]);
     read_bytes(index_reader, t_cols.get(), num_vals);
 
-    ulong n_columns = t_cols[num_vals - 1];
-    T* row = new T[n_columns];
-    for (ulong i = 0; i < n_columns; ++i) {
+    T* row = new T[_n_cols];
+    for (ulong i = 0; i < _n_cols; ++i) {
         row[i] = 0;
     }
     for (ulong i = 0; i < num_vals; ++i) {

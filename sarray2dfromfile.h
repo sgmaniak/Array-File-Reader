@@ -25,9 +25,10 @@ private:
     ulong OUT_FILE_SIZE = 10000;
 
     ulong _n_rows;
-    std::vector<std::string> _file_list;
+    ulong _n_cols;
+    std::vector<std::string> _data_file_list;
     std::vector<std::string> _index_file_list;
-    std::vector<std::tuple<long, long>> _index;
+    std::vector<long> _file_position_index;
     std::vector<ulong> _nvalues_index;
 
     void clear_output_files();
@@ -35,6 +36,8 @@ private:
     bool is_delimiter(const char c) const;
 
     std::string find_available_file_name(ulong &cur_file_index, const std::string &base_name);
+
+    ulong find_num_columns(std::ifstream &ja_reader, long end_position) const;
 
     template <typename U>
     const U get_next_value_in_stream(std::ifstream &is) const;
@@ -49,7 +52,9 @@ public:
 
     T* get_row(unsigned long row_num);
 
-    unsigned long get_num_cols_in_row(ulong row_num) const {return _nvalues_index[row_num];};
+    unsigned long get_num_non_zero_in_row(ulong row_num) const {return _nvalues_index[row_num];};
+
+    unsigned long get_num_cols() const {return _n_cols;};
 
     unsigned long get_num_rows() const {return _n_rows;};
 
